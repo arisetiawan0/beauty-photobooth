@@ -110,9 +110,20 @@ app and work without Cloudinary. A local frame is hidden once a Cloudinary frame
 
 ## 🖨️ Print
 
-**Cetak** prints the strip edge to edge on a **53 × 148 mm** page (grid frames: printer default size).
+**Cetak** prints the strip edge to edge, sized for the printer paper set in
+`selfsnap-web/src/lib/print.ts`:
 
-- Add a custom paper size of 53 × 148 mm in the printer driver and pick it once in the print dialog.
+| Setting | Value | Result |
+|---------|-------|--------|
+| `PRINT_ORIENTATION` | `"landscape"` (default) | 148 × 53 mm page, strip turned sideways |
+| | `"portrait"` | 53 × 148 mm page, strip upright |
+| `PRINT_ROTATION` | `-90` (default) | landscape: strip header on the left |
+| | `90` | landscape: strip header on the right (use if prints come out upside down) |
+
+The strip is rotated on a canvas before printing, so the output is pixel-exact.
+Grid frames use the printer's own paper size (rotated to fit when landscape).
+
+- Add a custom paper size of 148 × 53 mm (landscape) in the printer driver and pick it once in the print dialog.
 - For a kiosk with no print dialog, start Chrome with `--kiosk-printing`: it prints straight to the
   default printer with the last used settings.
 
