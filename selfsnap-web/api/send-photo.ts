@@ -30,14 +30,19 @@ function json(body: unknown, status = 200) {
   return Response.json(body, { status });
 }
 
+// Values pasted from a .env file into a dashboard can keep their surrounding quotes
+function unquote(value: string | undefined) {
+  return (value ?? "").trim().replace(/^(["'])(.*)\1$/, "$2");
+}
+
 function readConfig(): Config | null {
   const env = process.env;
   const config = {
-    resendKey: env.RESEND_API_KEY ?? "",
-    from: env.EMAIL_FROM ?? "",
-    cloud: env.CLOUDINARY_CLOUD_NAME ?? "",
-    apiKey: env.CLOUDINARY_API_KEY ?? "",
-    apiSecret: env.CLOUDINARY_API_SECRET ?? "",
+    resendKey: unquote(env.RESEND_API_KEY),
+    from: unquote(env.EMAIL_FROM),
+    cloud: unquote(env.CLOUDINARY_CLOUD_NAME),
+    apiKey: unquote(env.CLOUDINARY_API_KEY),
+    apiSecret: unquote(env.CLOUDINARY_API_SECRET),
   };
   return Object.values(config).every(Boolean) ? config : null;
 }
