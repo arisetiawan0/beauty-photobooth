@@ -1,5 +1,75 @@
 export type Rect = { x: number; y: number; w: number; h: number };
 
+export type FrameFooter = "default" | "compact" | "none";
+
+export type FrameLayout = {
+  canvasW: number;
+  canvasH: number;
+  slots: Rect[];
+  footer: FrameFooter;
+};
+
+// Default 2x2 grid layout — MUST stay in sync with ResultView/BoothView consts
+export function grid4Layout(): FrameLayout {
+  return {
+    canvasW: 1080,
+    canvasH: 1920,
+    slots: compute4GridSlots(1080, 1920, {
+      outerPad: 44,
+      gap: 26,
+      headerH: 140,
+      footerH: 220,
+      ratioW: 3,
+      ratioH: 4,
+    }),
+    footer: "default",
+  };
+}
+
+// Beauty Warehouse Sale 2026 — 3-slot strip, native 1017x2840 (= 53x148 mm ratio).
+// Slot rects measured from the artwork's photo boxes.
+export function strip3Layout(): FrameLayout {
+  return {
+    canvasW: 1017,
+    canvasH: 2840,
+    slots: [
+      { x: 79, y: 743, w: 859, h: 603 },
+      { x: 79, y: 1408, w: 859, h: 603 },
+      { x: 79, y: 2072, w: 859, h: 603 },
+    ],
+    footer: "compact",
+  };
+}
+
+// Parse a layout payload persisted in sessionStorage (selfsnap.settings.layout)
+export function resolveLayout(raw: unknown): FrameLayout {
+  const l = raw as Partial<FrameLayout> | undefined;
+  if (
+    l &&
+    typeof l.canvasW === "number" &&
+    typeof l.canvasH === "number" &&
+    Array.isArray(l.slots) &&
+    l.slots.length > 0 &&
+    l.slots.every(
+      (s) =>
+        typeof s?.x === "number" &&
+        typeof s?.y === "number" &&
+        typeof s?.w === "number" &&
+        typeof s?.h === "number"
+    )
+  ) {
+    return {
+      canvasW: l.canvasW,
+      canvasH: l.canvasH,
+      slots: l.slots,
+      footer: (["default", "compact", "none"] as const).includes(l.footer as FrameFooter)
+        ? (l.footer as FrameFooter)
+        : "default",
+    };
+  }
+  return grid4Layout();
+}
+
 export function compute4GridSlots(
   canvasW: number,
   canvasH: number,

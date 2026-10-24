@@ -1,79 +1,171 @@
 <template>
-  <div class="min-h-screen p-6">
-    <div class="mx-auto max-w-5xl grid gap-6 md:grid-cols-2">
-      <!-- Settings -->
-      <div class="self-start rounded-3xl bg-white p-6 shadow">
-        <h2 class="text-2xl font-bold flex items-center gap-2">⚙️ Settings</h2>
+  <div class="mx-auto w-full max-w-6xl px-5 pb-44 pt-5 md:px-10 md:pb-16">
+    <TopBar back-to="/" :step="1" />
 
-        <div class="mt-6 space-y-4">
-          <div>
-            <label class="text-sm font-semibold">Frame</label>
-            <select v-model="selectedFrameKey" class="mt-1 w-full rounded-xl border p-3">
-              <option value="" disabled>Select a frame...</option>
-              <option v-for="f in frames" :key="f.s3Key" :value="f.s3Key">
-                {{ f.name ?? f.s3Key }}
-              </option>
-            </select>
+    <div
+      class="mt-8 grid gap-10 md:mt-12 md:grid-cols-[minmax(0,1fr)_360px] md:gap-12 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-16"
+    >
+      <section class="min-w-0 space-y-10">
+        <header class="motion-safe:animate-rise">
+          <h1 class="text-[32px] font-bold leading-[1.05] tracking-[-0.035em] md:text-[44px]">
+            Atur photobooth kamu
+          </h1>
+          <p class="mt-3 max-w-[48ch] text-base leading-relaxed text-ink-500">
+            Pilih frame, filter, dan timer. Kamera langsung memotret begitu hitungan mundur selesai.
+          </p>
+        </header>
+
+        <!-- Frame -->
+        <div class="motion-safe:animate-rise" style="animation-delay: 80ms">
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 id="frame-label" class="field-label">Frame</h2>
+            <span v-if="frames.length" class="text-[13px] tabular-nums text-ink-500">{{ frames.length }} pilihan</span>
           </div>
 
-          <div>
-            <label class="text-sm font-semibold">Filter</label>
-            <select v-model="filter" class="mt-1 w-full rounded-xl border p-3">
-              <option value="none">None</option>
-              <option value="bw">Black and White</option>
-              <option value="sepia">Sepia</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-sm font-semibold">Timer</label>
-            <select v-model.number="timerSeconds" class="mt-1 w-full rounded-xl border p-3">
-              <option :value="1">1 second</option>
-              <option :value="3">3 seconds</option>
-              <option :value="5">5 seconds</option>
-              <option :value="10">10 seconds</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-sm font-semibold">How to Use</label>
-            <p class="mt-2 text-sm text-gray-600">
-              Wait for the timer, then smile! No retakes. Don’t forget to download your photo — we don’t store anything.
-            </p>
-            <label class="mt-3 flex items-center gap-2 text-sm">
-              <input type="checkbox" v-model="understand" /> I understand. </label>
-          </div>
-
-          <button
-            class="mt-2 w-full rounded-full bg-emerald-500 py-3 font-bold text-white disabled:opacity-50"
-            :disabled="!canGo"
-            @click="go"
+          <div
+            role="radiogroup"
+            aria-labelledby="frame-label"
+            class="-mx-5 mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-3 pt-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 lg:grid-cols-3"
           >
-            GO
-          </button>
+            <template v-if="loading && !frames.length">
+              <div v-for="n in 3" :key="n" class="w-[44%] shrink-0 snap-start sm:w-[30%] md:w-auto">
+                <div class="rounded-[22px] bg-white p-1.5 shadow-soft">
+                  <div class="skeleton h-60 rounded-[16px] md:h-56"></div>
+                </div>
+                <div class="skeleton mt-3 h-4 w-3/4 rounded-full"></div>
+              </div>
+            </template>
 
-          <div v-if="error" class="text-sm text-red-600">{{ error }}</div>
+            <label
+              v-for="f in frames"
+              :key="f.id"
+              class="group w-[44%] shrink-0 cursor-pointer snap-start sm:w-[30%] md:w-auto"
+            >
+              <input v-model="selectedFrameKey" type="radio" name="frame" :value="f.id" class="peer sr-only" />
+              <div
+                class="relative rounded-[22px] bg-white p-1.5 shadow-soft ring-2 transition-[box-shadow,transform] duration-150 ease-out-soft group-active:scale-[0.98] peer-focus-visible:outline peer-focus-visible:outline-4 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-500/30"
+                :class="f.id === selectedFrameKey ? 'ring-brand-500' : 'ring-transparent group-hover:ring-brand-200'"
+              >
+                <div class="flex h-60 items-center justify-center overflow-hidden rounded-[16px] bg-blush-100 p-3 md:h-56">
+                  <img :src="f.url" :alt="f.name" loading="lazy" class="h-full w-full object-contain" />
+                </div>
+                <span
+                  v-if="f.id === selectedFrameKey"
+                  class="absolute right-3 top-3 grid size-7 place-items-center rounded-full bg-brand-500 text-white shadow-button motion-safe:animate-badge-in"
+                >
+                  <PhCheck :size="14" weight="bold" />
+                </span>
+              </div>
+              <p class="mt-3 line-clamp-2 px-1 text-[15px] font-semibold leading-snug">{{ f.name }}</p>
+              <p class="px-1 text-[13px] text-ink-500">{{ f.layout.slots.length }} pose</p>
+            </label>
+          </div>
+
+          <p v-if="!loading && !frames.length" class="mt-4 rounded-[22px] bg-white p-5 text-sm text-ink-500 shadow-soft">
+            Belum ada frame yang tersedia. Coba muat ulang halaman sebentar lagi.
+          </p>
+          <p v-else-if="loadError" class="mt-3 flex items-center gap-2 text-[13px] text-ink-500">
+            <PhWarningCircle :size="16" class="shrink-0 text-brand-600" />
+            Frame online gagal dimuat, menampilkan frame bawaan.
+          </p>
         </div>
-      </div>
 
-      <!-- Preview -->
-      <div class="rounded-3xl bg-white p-6 shadow">
-        <div class="text-sm text-gray-500">Preview</div>
-
-        <div class="mt-3 flex justify-center">
-          <img
-            v-if="selectedFrame?.url"
-            :src="selectedFrame.url"
-            class="max-h-[70vh] w-auto rounded-xl border"
-            alt="Frame preview"
-          />
-          <div v-else class="h-[70vh] w-full rounded-xl border flex items-center justify-center text-gray-400">
-            Select a frame to preview
+        <!-- Filter -->
+        <div class="motion-safe:animate-rise" style="animation-delay: 160ms">
+          <h2 id="filter-label" class="field-label">Filter</h2>
+          <div role="radiogroup" aria-labelledby="filter-label" class="segmented mt-4 max-w-md grid-cols-3">
+            <label v-for="opt in FILTERS" :key="opt.value" class="segment">
+              <input v-model="filter" type="radio" name="filter" :value="opt.value" class="sr-only" />
+              <span
+                aria-hidden="true"
+                class="size-4 rounded-full bg-gradient-to-br from-brand-400 to-sun ring-1 ring-black/10"
+                :style="{ filter: opt.css }"
+              ></span>
+              {{ opt.label }}
+            </label>
           </div>
         </div>
 
-        <div class="mt-4 text-xs text-gray-500" v-if="loading">Loading frames...</div>
-      </div>
+        <!-- Timer -->
+        <div class="motion-safe:animate-rise" style="animation-delay: 240ms">
+          <h2 id="timer-label" class="field-label">Timer per pose</h2>
+          <div role="radiogroup" aria-labelledby="timer-label" class="segmented mt-4 max-w-md grid-cols-4">
+            <label v-for="s in TIMERS" :key="s" class="segment">
+              <input v-model.number="timerSeconds" type="radio" name="timer" :value="s" class="sr-only" />
+              <span class="tabular-nums">{{ s }}</span>
+              <span class="-ml-1 text-[13px] opacity-60">dtk</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Consent (phones; on desktop it sits next to the button in the side panel) -->
+        <label
+          class="flex max-w-xl cursor-pointer items-start gap-3.5 rounded-[22px] bg-white p-4 shadow-soft motion-safe:animate-rise md:hidden"
+          style="animation-delay: 320ms"
+        >
+          <input v-model="understand" type="checkbox" class="mt-0.5 size-5 shrink-0 cursor-pointer accent-brand-500" />
+          <span>
+            <span class="block text-[15px] font-semibold">Saya mengerti, tidak ada foto ulang</span>
+            <span class="mt-1 block text-sm leading-relaxed text-ink-500">
+              Simpan, cetak, atau kirim ke email sebelum menutup halaman.
+            </span>
+          </span>
+        </label>
+      </section>
+
+      <!-- Desktop preview -->
+      <aside class="hidden md:block">
+        <div class="sticky top-6 space-y-4">
+          <div class="rounded-[28px] bg-white p-3 shadow-lift">
+            <div
+              class="flex h-[min(520px,max(160px,calc(100dvh_-_27rem)))] items-center justify-center overflow-hidden rounded-[16px] bg-blush-100 p-4"
+            >
+              <Transition name="swap" mode="out-in">
+                <img
+                  v-if="selectedFrame"
+                  :key="selectedFrame.url"
+                  :src="selectedFrame.url"
+                  :alt="`Pratinjau ${selectedFrame.name}`"
+                  class="h-full w-full object-contain drop-shadow-[0_12px_24px_rgb(140_15_82_/_0.18)]"
+                />
+                <div v-else class="flex flex-col items-center gap-3 px-8 text-center text-ink-500">
+                  <PhImagesSquare :size="32" class="text-brand-300" />
+                  <p class="text-sm">Pilih frame untuk melihat pratinjau</p>
+                </div>
+              </Transition>
+            </div>
+          </div>
+
+          <div v-if="selectedFrame" class="px-1">
+            <p class="text-[17px] font-semibold">{{ selectedFrame.name }}</p>
+            <p class="text-sm text-ink-500">{{ summary }}</p>
+          </div>
+
+          <label class="flex cursor-pointer items-start gap-3 rounded-[20px] bg-white p-4 shadow-soft">
+            <input v-model="understand" type="checkbox" class="mt-0.5 size-5 shrink-0 cursor-pointer accent-brand-500" />
+            <span class="text-sm leading-snug">
+              <span class="block font-semibold text-ink-900">Saya mengerti, tidak ada foto ulang</span>
+              <span class="mt-0.5 block text-ink-500">Simpan, cetak, atau email sebelum menutup halaman.</span>
+            </span>
+          </label>
+
+          <button type="button" class="btn btn-primary w-full" :disabled="!canGo" @click="go">
+            Buka kamera
+            <PhArrowRight :size="20" weight="bold" />
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Mobile CTA -->
+    <div
+      class="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t from-blush-50 from-60% to-blush-50/0 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 md:hidden"
+    >
+      <p class="mb-3 text-center text-[13px] text-ink-500">{{ canGo ? summary : hint }}</p>
+      <button type="button" class="btn btn-primary w-full" :disabled="!canGo" @click="go">
+        Buka kamera
+        <PhArrowRight :size="20" weight="bold" />
+      </button>
     </div>
   </div>
 </template>
@@ -81,23 +173,53 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { PhArrowRight, PhCheck, PhImagesSquare, PhWarningCircle } from "@phosphor-icons/vue";
+import TopBar from "@/components/TopBar.vue";
+import { loadFrames, type Frame } from "@/lib/frames";
 
-type Frame = { s3Key: string; name?: string | null; createdAt?: string | null; url: string };
 type FilterMode = "none" | "bw" | "sepia";
-type StoredSettings = { frameUrl: string; filter: FilterMode; timerSeconds: number };
+type LayoutPayload = {
+  canvasW: number;
+  canvasH: number;
+  slots: { x: number; y: number; w: number; h: number }[];
+  footer?: string;
+};
+type StoredSettings = {
+  frameUrl: string;
+  filter: FilterMode;
+  timerSeconds: number;
+  layout?: LayoutPayload;
+};
+
+const FILTERS: { value: FilterMode; label: string; css: string }[] = [
+  { value: "none", label: "Normal", css: "none" },
+  { value: "bw", label: "Mono", css: "grayscale(1)" },
+  { value: "sepia", label: "Sepia", css: "sepia(1)" },
+];
+const TIMERS = [1, 3, 5, 10];
 
 const router = useRouter();
 const frames = ref<Frame[]>([]);
-const loading = ref(false);
-const error = ref<string | null>(null);
+const loading = ref(true);
+const loadError = ref<string | null>(null);
 
 const selectedFrameKey = ref("");
 const filter = ref<FilterMode>("none");
 const timerSeconds = ref<number>(3);
 const understand = ref(false);
 
-const selectedFrame = computed(() => frames.value.find((f) => f.s3Key === selectedFrameKey.value));
+const selectedFrame = computed(() => frames.value.find((f) => f.id === selectedFrameKey.value));
 const canGo = computed(() => understand.value && !!selectedFrame.value);
+
+const hint = computed(() =>
+  !selectedFrame.value ? "Pilih frame dulu" : "Centang persetujuan untuk lanjut"
+);
+const summary = computed(() => {
+  const f = selectedFrame.value;
+  if (!f) return "";
+  const filterLabel = FILTERS.find((o) => o.value === filter.value)?.label ?? "Normal";
+  return `${f.layout.slots.length} pose · ${filterLabel} · ${timerSeconds.value} detik`;
+});
 
 function readStoredSettings(): Partial<StoredSettings> {
   try {
@@ -114,40 +236,29 @@ function readStoredSettings(): Partial<StoredSettings> {
   }
 }
 
-async function loadFrames() {
+async function init() {
   loading.value = true;
-  error.value = null;
+  const list = await loadFrames();
+  frames.value = list.frames;
+  loadError.value = list.error;
 
-  try {
-    const base = import.meta.env.VITE_API_BASE;
-    if (!base) throw new Error("Missing VITE_API_BASE in .env.local");
+  // Restore the previously selected frame by URL match
+  const stored = readStoredSettings();
+  const match = stored.frameUrl ? frames.value.find((f) => f.url === stored.frameUrl) : undefined;
+  if (match) selectedFrameKey.value = match.id;
+  else if (frames.value.length === 1) selectedFrameKey.value = frames.value[0]!.id;
 
-    const res = await fetch(`${base}/frames`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Frames API error: ${res.status}`);
-
-    const data = await res.json();
-    frames.value = (data.frames ?? []).filter((f: Frame) => f?.s3Key && !f.s3Key.endsWith("/"));
-
-    // After frames load, try to restore the previously selected frame by URL match
-    const stored = readStoredSettings();
-    if (stored.frameUrl) {
-      const match = frames.value.find((f) => f.url === stored.frameUrl);
-      if (match) selectedFrameKey.value = match.s3Key;
-    }
-  } catch (e: any) {
-    error.value = e?.message ?? "Failed to load frames.";
-  } finally {
-    loading.value = false;
-  }
+  loading.value = false;
 }
 
 function go() {
-  if (!selectedFrame.value) return;
+  if (!selectedFrame.value || !canGo.value) return;
 
   const payload: StoredSettings = {
     frameUrl: selectedFrame.value.url,
     filter: filter.value,
     timerSeconds: timerSeconds.value,
+    layout: selectedFrame.value.layout,
   };
 
   sessionStorage.setItem("selfsnap.settings", JSON.stringify(payload));
@@ -159,6 +270,6 @@ onMounted(() => {
   if (stored.filter) filter.value = stored.filter;
   if (stored.timerSeconds) timerSeconds.value = stored.timerSeconds;
 
-  loadFrames();
+  init();
 });
 </script>

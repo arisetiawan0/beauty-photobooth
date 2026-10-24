@@ -12,4 +12,6 @@ export const router = createRouter({
     { path: "/booth", name: "booth", component: BoothView },
     { path: "/result", name: "result", component: ResultView },
   ],
+  // Every step starts at the top (the booth would otherwise open half-scrolled)
+  scrollBehavior: () => ({ top: 0 }),
 });

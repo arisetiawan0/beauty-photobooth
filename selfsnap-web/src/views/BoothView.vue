@@ -1,122 +1,145 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-xl">
-      <div class="bg-white/90 rounded-3xl shadow-xl p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-bold flex items-center gap-2">
-            📸 Booth
-          </h2>
-          
-          <div class="flex items-center gap-2">
-            <button
-              class="p-3 rounded-full bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-              @click="flipCamera"
-              :disabled="isRunning"
-              title="Flip camera"
-            >
-              <i class="fas fa-camera-rotate text-slate-800"></i>
-            </button>
-            
-            <button
-              class="p-3 rounded-full bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-              @click="goBack"
-              :disabled="isRunning"
-              title="Go back"
-            >
-              <i class="fas fa-arrow-left text-slate-800"></i>
-            </button>
-          </div>
-        </div>
+  <div class="bg-ink-950 text-white">
+    <div
+      class="mx-auto flex h-[100dvh] min-h-[560px] w-full max-w-7xl flex-col px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-8 md:pt-5"
+    >
+      <TopBar back-to="/settings" :step="2" tone="dark" :disabled="isRunning">
+        <template #right>
+          <button
+            type="button"
+            class="icon-btn icon-btn-dark"
+            :disabled="isRunning || !cameraReady"
+            aria-label="Ganti kamera depan atau belakang"
+            @click="flipCamera"
+          >
+            <PhCameraRotate :size="20" weight="bold" />
+          </button>
+        </template>
+      </TopBar>
 
-        <div class="relative w-full max-w-sm mx-auto">
-          <div class="relative w-full aspect-[9/16] overflow-hidden rounded-3xl bg-slate-100 shadow-lg">
-            <!-- Background frame -->
-            <img
-              v-if="settings.frameUrl"
-              :src="settings.frameUrl"
-              class="absolute inset-0 w-full h-full object-cover"
-              alt="Frame background"
-            />
-
-            <!-- Live camera -->
+      <main class="flex min-h-0 flex-1 gap-6 py-4 md:py-6" style="container-type: size">
+        <!-- Viewfinder: as large as the space allows, same crop as the saved photo -->
+        <div class="relative min-w-0 flex-1" style="container-type: size">
+          <div
+            class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[24px] bg-white/5 shadow-[0_30px_60px_-24px_rgb(0_0_0_/_0.7)] ring-1 ring-white/10"
+            :style="{ width: `min(100cqw, calc(100cqh * ${slotRatio}))`, aspectRatio: `${slotRatio}` }"
+          >
             <video
-            ref="videoEl"
-            autoplay
-            playsinline
-            muted
-            class="absolute bg-black object-cover"
-            :style="{
-                ...activeSlotStyle,
+              ref="videoEl"
+              autoplay
+              playsinline
+              muted
+              class="absolute inset-0 h-full w-full object-cover"
+              :style="{
                 filter: previewCssFilter,
                 WebkitFilter: previewCssFilter,
-                transform:
-                (facingMode === 'user' ? 'scaleX(-1) ' : '') + 'translateZ(0)',
-                willChange: 'transform, filter',
-            }"
+                transform: (facingMode === 'user' ? 'scaleX(-1) ' : '') + 'translateZ(0)',
+              }"
             />
 
-
-            <!-- SLOT CONTENT -->
-            <div class="absolute inset-0 pointer-events-none">
-              <div v-for="(st, idx) in slotStyles" :key="idx" class="absolute" :style="st">
-                <!-- Captured shot stays in its slot -->
-                <img
-                  v-if="shots[idx]"
-                  :src="shots[idx]"
-                  class="absolute inset-0 w-full h-full object-cover"
-                  alt="Captured"
-                />
-
-                <div
-                  v-else-if="idx !== activeSlotIndex"
-                  class="absolute inset-0 bg-white/35"
-                ></div>
-
-                <!-- Border guides -->
-                <div
-                  class="absolute inset-0"
-                  :class="idx === activeSlotIndex ? 'ring-4 ring-emerald-400' : 'ring-2 ring-black/10'"
-                ></div>
-
-                <!-- Slot number -->
-                <div
-                  class="absolute -top-3 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold"
-                  :class="idx === activeSlotIndex ? 'bg-emerald-400 text-black' : 'bg-white/90 text-slate-900'"
-                >
-                  {{ idx + 1 }}
-                </div>
-              </div>
+            <div v-if="!cameraReady && !errorMsg" class="skeleton-dark absolute inset-0 grid place-items-center">
+              <span class="text-sm font-medium text-white/80">Menyiapkan kamera…</span>
             </div>
+
+            <!-- Framing corners -->
+            <div aria-hidden="true" class="pointer-events-none absolute inset-4 md:inset-6">
+              <span class="absolute left-0 top-0 size-7 rounded-tl-[10px] border-l-2 border-t-2 border-white/70"></span>
+              <span class="absolute right-0 top-0 size-7 rounded-tr-[10px] border-r-2 border-t-2 border-white/70"></span>
+              <span class="absolute bottom-0 left-0 size-7 rounded-bl-[10px] border-b-2 border-l-2 border-white/70"></span>
+              <span class="absolute bottom-0 right-0 size-7 rounded-br-[10px] border-b-2 border-r-2 border-white/70"></span>
+            </div>
+
+            <span
+              class="absolute left-4 top-4 rounded-full bg-ink-950/55 px-3 py-1.5 text-[13px] font-semibold tabular-nums ring-1 ring-white/10 backdrop-blur-md md:left-6 md:top-6"
+            >
+              Pose {{ Math.min(currentShotIndex + 1, totalShots) }} / {{ totalShots }}
+            </span>
+
+            <span
+              aria-hidden="true"
+              class="absolute bottom-5 left-1/2 hidden max-w-[calc(100%-2rem)] -translate-x-1/2 truncate rounded-full bg-ink-950/55 px-4 py-2 text-sm font-medium text-white/85 ring-1 ring-white/10 backdrop-blur-md md:block"
+            >
+              {{ statusText }}
+            </span>
 
             <!-- Countdown -->
             <div
               v-if="countdown > 0"
-              class="absolute inset-0 flex items-center justify-center bg-black/35"
+              class="pointer-events-none absolute inset-0 grid place-items-center bg-ink-950/20"
             >
-              <div class="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center text-4xl font-black">
+              <span
+                :key="countdown"
+                class="text-[clamp(72px,26cqh,220px)] font-bold leading-none tabular-nums text-white drop-shadow-[0_6px_24px_rgb(0_0_0_/_0.4)] motion-safe:animate-pop"
+              >
                 {{ countdown }}
-              </div>
+              </span>
             </div>
-          </div>
 
-          <div class="mt-4 flex flex-col items-center justify-center">
-            <div v-if="isRunning" class="mb-2 text-center text-sm text-black-500 font-medium">
-              <i class="fas fa-circle-notch fa-spin"></i> Capturing...
-            </div>
-            
-            <button
-              class="w-16 h-16 rounded-full bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 transition-all hover:scale-105 flex items-center justify-center"
-              @click="startSequence"
-              :disabled="!cameraReady || isRunning"
-              :title="isRunning ? 'Capturing...' : 'Start capture'"
-            >
-              <i class="fas fa-camera text-2xl"></i>
-            </button>
+            <!-- Shutter flash -->
+            <div
+              v-if="flashKey"
+              :key="flashKey"
+              class="pointer-events-none absolute inset-0 bg-white motion-safe:animate-flash motion-reduce:hidden"
+            ></div>
           </div>
-
-          <p v-if="errorMsg" class="mt-3 text-sm text-red-600 text-center">{{ errorMsg }}</p>
         </div>
-      </div>
+
+        <!-- Tablet/desktop side column: progress strip + shutter, so the viewfinder keeps the full height -->
+        <aside
+          class="hidden shrink-0 flex-col items-center justify-center gap-5 md:flex"
+          :style="{ width: `max(96px, calc((100cqh - 9.5rem) * ${frameRatio}))` }"
+        >
+          <StripPreview
+            class="w-full"
+            :frame-url="settings.frameUrl"
+            :layout="layout"
+            :shots="shots"
+            :active-index="activeSlotIndex"
+          />
+          <ShutterButton :disabled="!cameraReady || isRunning || !!errorMsg" :running="isRunning" @press="startSequence" />
+          <span class="text-sm font-medium tabular-nums text-white/60">{{ shots.length }}/{{ totalShots }} foto</span>
+        </aside>
+      </main>
+
+      <footer :class="{ 'md:hidden': !errorMsg }">
+        <div v-if="errorMsg" role="alert" class="mx-auto w-full max-w-xl rounded-[22px] bg-white/[0.06] p-4 ring-1 ring-white/10">
+          <div class="flex gap-3">
+            <PhWarningCircle :size="22" class="mt-0.5 shrink-0 text-brand-300" />
+            <div>
+              <p class="font-semibold">Kamera belum bisa dipakai</p>
+              <p class="mt-1 text-sm leading-relaxed text-white/65">{{ errorMsg }}</p>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary mt-4 h-12 w-full" @click="startCamera">
+            <PhArrowCounterClockwise :size="18" weight="bold" />
+            Coba lagi
+          </button>
+        </div>
+
+        <template v-else>
+          <p class="min-h-[1.5rem] text-center text-[15px] text-white/70" aria-live="polite">{{ statusText }}</p>
+
+          <div class="mt-4 grid grid-cols-[1fr_auto_1fr] items-center">
+            <!-- Phones: progress strip beside the shutter, like a camera roll thumbnail -->
+            <div class="justify-self-start">
+              <StripPreview
+                compact
+                class="h-[96px] w-auto md:hidden"
+                :frame-url="settings.frameUrl"
+                :layout="layout"
+                :shots="shots"
+                :active-index="activeSlotIndex"
+              />
+            </div>
+
+            <ShutterButton :disabled="!cameraReady || isRunning" :running="isRunning" @press="startSequence" />
+
+            <span class="justify-self-end text-sm font-medium tabular-nums text-white/60">
+              {{ shots.length }}/{{ totalShots }} foto
+            </span>
+          </div>
+        </template>
+      </footer>
     </div>
   </div>
 </template>
@@ -124,10 +147,18 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { compute4GridSlots } from "@/lib/layout";
+import {
+  PhArrowCounterClockwise,
+  PhCameraRotate,
+  PhWarningCircle,
+} from "@phosphor-icons/vue";
+import ShutterButton from "@/components/ShutterButton.vue";
+import StripPreview from "@/components/StripPreview.vue";
+import TopBar from "@/components/TopBar.vue";
+import { resolveLayout } from "@/lib/layout";
 
 type FilterMode = "none" | "bw" | "sepia";
-type Settings = { frameUrl: string; filter: FilterMode; timerSeconds: number };
+type Settings = { frameUrl: string; filter: FilterMode; timerSeconds: number; layout?: unknown };
 
 const router = useRouter();
 
@@ -142,52 +173,15 @@ const shots = ref<string[]>([]);
 const errorMsg = ref<string>("");
 
 const facingMode = ref<"user" | "environment">("user");
+const flashKey = ref(0);
 const settings = reactive<Settings>(loadSettings());
 
-const FRAME_W = 1080;
-const FRAME_H = 1920;
+// Layout resolved from settings (strip3 or grid4, from the frame's tag)
+const layout = computed(() => resolveLayout(settings.layout));
+const FRAME_W = computed(() => layout.value.canvasW);
+const FRAME_H = computed(() => layout.value.canvasH);
 
-// MUST match ResultView + layout.ts
-const LAYOUT = {
-  outerPad: 44,
-  gap: 26,
-  headerH: 140,
-  footerH: 220,
-  ratioW: 3,
-  ratioH: 4,
-};
-
-const slotsPx = computed(() =>
-  compute4GridSlots(FRAME_W, FRAME_H, {
-    outerPad: LAYOUT.outerPad,
-    gap: LAYOUT.gap,
-    ratioW: LAYOUT.ratioW,
-    ratioH: LAYOUT.ratioH,
-    headerH: LAYOUT.headerH,
-    footerH: LAYOUT.footerH,
-  })
-);
-
-const slotStyles = computed(() =>
-  slotsPx.value.map((s) => ({
-    left: `${(s.x / FRAME_W) * 100}%`,
-    top: `${(s.y / FRAME_H) * 100}%`,
-    width: `${(s.w / FRAME_W) * 100}%`,
-    height: `${(s.h / FRAME_H) * 100}%`,
-  }))
-);
-
-const activeSlotStyle = computed(() => {
-  const s = slotsPx.value[activeSlotIndex.value];
-  if (!s) return { inset: "0" };
-
-  return {
-    left: `${(s.x / FRAME_W) * 100}%`,
-    top: `${(s.y / FRAME_H) * 100}%`,
-    width: `${(s.w / FRAME_W) * 100}%`,
-    height: `${(s.h / FRAME_H) * 100}%`,
-  } as Record<string, string>;
-});
+const slotsPx = computed(() => layout.value.slots);
 
 /**
  * Active slot for preview:
@@ -195,6 +189,25 @@ const activeSlotStyle = computed(() => {
  * - if not running: show slot 0 (so user sees where they'll be framed)
  */
 const activeSlotIndex = computed(() => (isRunning.value ? currentShotIndex.value : 0));
+
+const activeSlot = computed(
+  () => slotsPx.value[activeSlotIndex.value] ?? { x: 0, y: 0, w: 3, h: 4 }
+);
+
+// Viewfinder uses the slot's aspect ratio, so what you see is exactly what gets saved
+const slotRatio = computed(() => activeSlot.value.w / activeSlot.value.h);
+const frameRatio = computed(() => FRAME_W.value / FRAME_H.value);
+const totalShots = computed(() => slotsPx.value.length);
+
+const statusText = computed(() => {
+  const total = slotsPx.value.length;
+  if (!cameraReady.value) return "Menyiapkan kamera…";
+  if (isRunning.value) {
+    const n = currentShotIndex.value + 1;
+    return countdown.value > 0 ? `Pose ${n} dari ${total}, siap-siap!` : `Pose ${n} dari ${total}`;
+  }
+  return `Atur posisi di kamera, lalu tekan tombol. ${total} foto otomatis.`;
+});
 
 const previewCssFilter = computed(() => {
   if (settings.filter === "bw") return "grayscale(1)";
@@ -227,7 +240,7 @@ async function startCamera() {
     const constraints: MediaStreamConstraints = {
       video: {
         facingMode: facingMode.value,
-        aspectRatio: { ideal: 3 / 4 },
+        aspectRatio: { ideal: activeSlot.value.w / activeSlot.value.h },
         width: { ideal: 1920 },
         height: { ideal: 1080 },
       },
@@ -273,14 +286,10 @@ async function startCamera() {
   } catch (err: any) {
     errorMsg.value =
       err?.name === "NotAllowedError"
-        ? "Camera permission denied. Please allow camera access."
-        : `Failed to start camera: ${err?.message ?? String(err)}`;
+        ? "Izin kamera ditolak. Izinkan akses kamera di pengaturan browser, lalu coba lagi."
+        : `Gagal membuka kamera: ${err?.message ?? String(err)}`;
     console.error("Camera error:", err);
   }
-}
-
-function goBack() {
-  router.push("/settings");
 }
 
 async function flipCamera() {
@@ -332,8 +341,10 @@ async function captureOneShot(_: number): Promise<string> {
   const v = videoEl.value;
   if (!v) throw new Error("Video not ready");
 
-  const outW = 1080;
-  const outH = 1440;
+  const slot = activeSlot.value;
+  const scale = 1080 / Math.max(slot.w, slot.h);
+  const outW = Math.round(slot.w * scale);
+  const outH = Math.round(slot.h * scale);
 
   const shotCanvas = document.createElement("canvas");
   shotCanvas.width = outW;
@@ -365,12 +376,13 @@ async function startSequence() {
   currentShotIndex.value = 0;
 
   try {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < slotsPx.value.length; i++) {
       currentShotIndex.value = i;
 
       await runCountdown(settings.timerSeconds);
       const shot = await captureOneShot(i);
       shots.value = [...shots.value, shot];
+      flashKey.value += 1;
 
       await sleep(250);
     }
@@ -378,7 +390,7 @@ async function startSequence() {
     saveShotsToSession(shots.value);
     router.push("/result");
   } catch (err: any) {
-    errorMsg.value = `Capture failed: ${err?.message ?? String(err)}`;
+    errorMsg.value = `Gagal memotret: ${err?.message ?? String(err)}`;
   } finally {
     countdown.value = 0;
     isRunning.value = false;

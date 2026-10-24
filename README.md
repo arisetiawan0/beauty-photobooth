@@ -17,8 +17,8 @@ It’s designed to feel like a real photo booth: fixed framing, timed captures, 
 - ⏱️ Timer-based capture (no retakes)
 - 🪞 Mirrored selfie preview
 - 📤 Download & Share (Web Share API on supported devices)
-- ☁️ Fully serverless
-- 🔒 Privacy-first: **no uploads, no database**
+- 🖼️ Frames managed in Cloudinary — upload a new frame, it appears in the app
+- 🔒 Privacy-first: photos are uploaded only when the visitor chooses Email
 
 ---
 
@@ -43,13 +43,10 @@ It’s designed to feel like a real photo booth: fixed framing, timed captures, 
 - HTML Canvas API
 - Web Media APIs (`getUserMedia`)
 
-### Backend / Infrastructure
-- AWS S3 (static hosting)
-- AWS CloudFront (CDN)
-- AWS Lambda (frame listing API)
-- AWS API Gateway
-- AWS SAM (deployment)
-- AWS Certificate Manager (TLS)
+### Hosting / Media
+- Vercel (static hosting)
+- Cloudinary (frame images, listed client-side by tag)
+- Resend (email) via one Vercel Function, no database
 
 ---
 
@@ -65,32 +62,81 @@ This guarantees **what you see in the booth is exactly what you get in the final
 
 ---
 
-## 🔒 Privacy by Design
+## 🔒 Privacy
 
-- ❌ No image uploads
-- ❌ No database
-- ❌ No server-side image storage
-- ✅ Images exist only in:
-  - Browser memory
-  - Session Storage
-  - User’s device
+- Photos stay in the browser session (memory + `sessionStorage`) by default.
+- A photo is uploaded **only** when the visitor chooses **Email**: the strip goes to the
+  Cloudinary folder `selfsnap-photos` and the link is emailed to them.
+- Closing the tab clears everything else.
 
-Closing the tab clears everything.
-
----
-
-## 🚀 Deployment
-
-### Frontend
+## 💻 Run locally
 
 ```bash
-npm run build
-aws s3 sync dist s3://<your-bucket> --delete
-aws cloudfront create-invalidation --distribution-id <ID> --paths "/*"
+cd selfsnap-web
+npm install
+npm run dev
 ```
 
-### Backend (AWS SAM)
+## 🖼️ Frames (Cloudinary)
+
+### One-time setup
+
+1. Put your **cloud name** (Cloudinary Console > Dashboard) in `selfsnap-web/.env.local`:
+   `CLOUDINARY_CLOUD_NAME=your-cloud-name` (see `.env.example`; the same file holds the email keys)
+2. Cloudinary Console > **Settings > Security** > *Restricted media types*: **uncheck "Resource list"**.
+   This lets the app read the list of frames by tag (it only exposes images that carry a tag).
+
+### Add, replace or remove a frame
+
+1. Upload the PNG in the Cloudinary **Media Library**.
+2. Give it **one** tag that says where the photos go:
+
+   | Tag | Layout |
+   |-----|--------|
+   | `selfsnap-strip3` | 3-photo strip (Warehouse Sale template, 1017×2840) |
+   | `selfsnap-grid4`  | 2×2 grid (1080×1920) |
+
+3. Done. The frame shows up in the app within ~60 seconds. No redeploy needed.
+
+- **Name in the app:** the asset's *Title* (caption) if set, otherwise its file name.
+- **Replace:** overwrite the asset or upload a new one. **Remove:** delete it or remove its tag.
+- **New frame design** with different photo positions: add a layout in
+  `selfsnap-web/src/lib/layout.ts` and a tag for it in `FRAME_TAGS` (`src/lib/frames.ts`), then redeploy.
+
+### Local frames
+
+Frames in `selfsnap-web/public/local-frames/` (listed in `src/lib/frames.ts`) are bundled with the
+app and work without Cloudinary. A local frame is hidden once a Cloudinary frame has the same name.
+
+## 🖨️ Print
+
+**Cetak** prints the strip edge to edge on a **53 × 148 mm** page (grid frames: printer default size).
+
+- Add a custom paper size of 53 × 148 mm in the printer driver and pick it once in the print dialog.
+- For a kiosk with no print dialog, start Chrome with `--kiosk-printing`: it prints straight to the
+  default printer with the last used settings.
+
+## ✉️ Email (Resend + Cloudinary)
+
+**Email** sends a download link. `api/send-photo.ts` (a Vercel Function) uploads the strip to
+Cloudinary with a signed upload and sends the email with Resend. Secrets never reach the browser.
+
+1. Copy `selfsnap-web/.env.example` to `selfsnap-web/.env.local` and fill it in:
+   - `RESEND_API_KEY`: from resend.com > API Keys
+   - `EMAIL_FROM`: a sender on a **domain verified in Resend**, e.g. `beauty photobooth <foto@beauty.co.id>`.
+     Without a verified domain, `onboarding@resend.dev` only delivers to your own Resend account email.
+   - `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: Cloudinary Console > Settings > API Keys
+2. Set the same variables in Vercel: Project > Settings > Environment Variables.
+
+`npm run dev` serves `/api/*` locally (small Vite plugin in `vite.config.ts`), so email works in dev too.
+Abuse guards: email/image validation, JPEG only up to ~3 MB, 5 sends per IP per 10 minutes.
+
+## 🚀 Deploy (Vercel)
+
+```bash
+cd selfsnap-web
+npx vercel --prod
 ```
-sam build
-sam deploy
-```
+
+The first run asks to link a Vercel project (framework: Vite, output: `dist`).
+`vercel.json` rewrites all routes to `index.html` so deep links like `/booth` work.

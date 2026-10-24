@@ -1,0 +1,2 @@
+# Secrets stay out of deployments; set env vars in Vercel instead
+.env*.local

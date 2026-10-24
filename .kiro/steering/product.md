@@ -4,7 +4,7 @@ SelfSnap is a browser-based photo booth that captures a 4-shot photo strip, comp
 
 ## Core Principles
 
-- **Privacy-first**: No images are uploaded or stored server-side. All photo data lives in the browser session only.
+- **Privacy-first**: Photos live in the browser session only, unless the visitor chooses Email (then the strip is uploaded to Cloudinary and the link is sent via Resend).
 - **WYSIWYG framing**: The booth preview uses the exact same layout math as the final composed image.
 - **No retakes**: Captures are sequential and timer-based, mimicking a real photo booth experience.
 - **Mobile-first**: Designed primarily for mobile selfie use, but works on desktop.
@@ -19,5 +19,5 @@ SelfSnap is a browser-based photo booth that captures a 4-shot photo strip, comp
 ## Data Model
 
 - Settings and captured shots are passed between views via `sessionStorage`.
-- Frames are fetched from a backend API (`/frames`) and stored in DynamoDB.
+- Frames come from Cloudinary (client-side list by tag, see `src/lib/frames.ts`) plus bundled local frames. The tag picks the photo layout.
 - The final image is composed entirely client-side using HTML Canvas.
