@@ -161,6 +161,22 @@
   opacity: 0;
 }
 
+/* Rotating headline tagline (LandingView) */
+@media (prefers-reduced-motion: no-preference) {
+  .word-enter-active,
+  .word-leave-active {
+    transition: opacity 260ms cubic-bezier(0.2, 0, 0, 1), transform 260ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .word-enter-from {
+    opacity: 0;
+    transform: translateY(0.3em);
+  }
+  .word-leave-to {
+    opacity: 0;
+    transform: translateY(-0.2em);
+  }
+}
+
 /* Route transition: soft rise in, subtle fade out */
 .page-enter-active {
   transition: opacity 260ms cubic-bezier(0.2, 0, 0, 1), transform 260ms cubic-bezier(0.2, 0, 0, 1);

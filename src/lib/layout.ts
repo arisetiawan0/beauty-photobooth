@@ -37,7 +37,7 @@ export function strip3Layout(): FrameLayout {
       { x: 79, y: 1408, w: 859, h: 603 },
       { x: 79, y: 2072, w: 859, h: 603 },
     ],
-    footer: "compact",
+    footer: "none", // strip artwork already carries branding; no printed date
   };
 }
 

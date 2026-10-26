@@ -351,15 +351,13 @@ async function compose() {
     ctx.restore();
   }
 
-  const footerMode = layout.value.footer ?? "default";
-
-  if (footerMode !== "none") {
-    const compact = footerMode === "compact";
-
-    const sampleX = compact ? Math.floor(W * 0.2) : Math.floor(W * 0.15);
-    const sampleW = compact ? Math.floor(W * 0.6) : Math.floor(W * 0.7);
-    const sampleY = compact ? H - 150 : H - 320;
-    const sampleH = compact ? 130 : 240;
+  // Grid frames: brand + date footer. Strip frames print without text —
+  // the frame artwork already carries the branding.
+  if ((layout.value.footer ?? "default") === "default") {
+    const sampleX = Math.floor(W * 0.15);
+    const sampleW = Math.floor(W * 0.7);
+    const sampleY = H - 320;
+    const sampleH = 240;
 
     const footerTextColor = pickTextColorFromRegion(ctx, sampleX, sampleY, sampleW, sampleH);
 
@@ -367,17 +365,11 @@ async function compose() {
     ctx.textAlign = "center";
     ctx.fillStyle = footerTextColor;
 
-    if (compact) {
-      // Strip frames: small date line in the narrow bottom margin
-      ctx.font = "600 52px Outfit, system-ui, -apple-system, Segoe UI, Roboto, Arial";
-      ctx.fillText(dateStr.value, W / 2, H - 52);
-    } else {
-      ctx.font = "700 96px Outfit, system-ui, -apple-system, Segoe UI, Roboto, Arial";
-      ctx.fillText(BRAND, W / 2, H - 220);
+    ctx.font = "700 96px Outfit, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText(BRAND, W / 2, H - 220);
 
-      ctx.font = "500 54px Outfit, system-ui, -apple-system, Segoe UI, Roboto, Arial";
-      ctx.fillText(dateStr.value, W / 2, H - 150);
-    }
+    ctx.font = "500 54px Outfit, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText(dateStr.value, W / 2, H - 150);
 
     ctx.restore();
   }

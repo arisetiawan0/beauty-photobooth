@@ -20,7 +20,11 @@
         style="animation-delay: 200ms"
       >
         Senyum, jepret,
-        <span class="block text-brand-500">bawa pulang.</span>
+        <span class="block text-brand-500">
+          <Transition name="word" mode="out-in">
+            <span :key="tagline" class="inline-block">{{ tagline }}</span>
+          </Transition>
+        </span>
       </h1>
 
       <p
@@ -88,13 +92,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { PhArrowRight, PhCamera } from "@phosphor-icons/vue";
 import BrandMark from "@/components/BrandMark.vue";
 import { loadFrames, type Frame } from "@/lib/frames";
 
 const STEPS = ["Pilih frame", "Pose saat hitungan mundur", "Simpan, cetak, atau email"];
+
+// Second headline line rotates; first line stays as the anchor
+const TAGLINES = ["bawa pulang.", "cetak kenangan.", "bagikan ceritanya."];
+const taglineIndex = ref(0);
+const tagline = computed(() => TAGLINES[taglineIndex.value]!);
+let taglineTimer: number | undefined;
 
 // x = horizontal offset in % of the card's own width, r = tilt
 const LAYOUTS: Record<number, { x: number; r: number; z: number }[]> = {
@@ -116,6 +126,13 @@ const frames = ref<Frame[]>([]);
 
 const showcase = computed(() => frames.value.slice(0, 3));
 const placement = computed(() => LAYOUTS[Math.max(1, showcase.value.length)]!);
+
+onMounted(() => {
+  taglineTimer = window.setInterval(() => {
+    taglineIndex.value = (taglineIndex.value + 1) % TAGLINES.length;
+  }, 2800);
+});
+onUnmounted(() => window.clearInterval(taglineTimer));
 
 onMounted(async () => {
   frames.value = (await loadFrames()).frames;
