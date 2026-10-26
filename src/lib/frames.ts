@@ -1,4 +1,4 @@
-import { grid4Layout, strip3Layout, type FrameLayout } from "./layout";
+import { strip3Layout, grid4Layout, parseLayout, type FrameLayout } from "./layout";
 
 export type Frame = {
   id: string;
@@ -38,6 +38,58 @@ type CloudinaryResource = {
   created_at?: string;
   context?: { custom?: Record<string, string> };
 };
+
+// ---------- Custom frames (uploaded on this device, stored in localStorage) ----------
+
+type StoredCustomFrame = {
+  id: string;
+  name: string;
+  // Full data URL of the frame PNG (persisted)
+  url: string;
+  layout: FrameLayout;
+};
+
+const CUSTOM_KEY = "selfsnap.customFrames";
+
+export function loadCustomFrames(): Frame[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((f: StoredCustomFrame) => {
+        const layout = parseLayout(f?.layout);
+        if (!layout || typeof f?.id !== "string" || typeof f?.name !== "string" || typeof f?.url !== "string") {
+          return null;
+        }
+        return { id: f.id, name: f.name, url: f.url, layout } satisfies Frame;
+      })
+      .filter((f): f is Frame => f !== null);
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomFrame(frame: Frame): Frame[] {
+  const frames = loadCustomFrames().filter((f) => f.id !== frame.id);
+  frames.unshift(frame);
+  try {
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(frames));
+  } catch (e) {
+    // Data URLs are large; quota errors mean the PNGs must shrink
+    throw new Error("Penyimpanan browser penuh. Coba gambar frame yang lebih kecil.");
+  }
+  return frames;
+}
+
+export function deleteCustomFrame(id: string): Frame[] {
+  const frames = loadCustomFrames().filter((f) => f.id !== id);
+  try {
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(frames));
+  } catch {}
+  return frames;
+}
 
 // "frames/warehouse-sale-pink_x8k2qz" -> "Warehouse Sale Pink"
 function nameFromPublicId(publicId: string): string {

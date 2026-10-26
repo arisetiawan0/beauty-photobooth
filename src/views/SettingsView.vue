@@ -17,7 +17,17 @@
         <div class="motion-safe:animate-rise" style="animation-delay: 80ms">
           <div class="flex items-baseline justify-between gap-3">
             <h2 id="frame-label" class="field-label">Frame</h2>
-            <span v-if="frames.length" class="text-[13px] tabular-nums text-ink-500">{{ frames.length }} pilihan</span>
+            <div class="flex items-baseline gap-4">
+              <span v-if="frames.length" class="text-[13px] tabular-nums text-ink-500">{{ frames.length }} pilihan</span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-full text-[13px] font-semibold text-brand-600 transition-[color] duration-150 hover:text-brand-700"
+                @click="addFrameOpen = true"
+              >
+                <PhPlus :size="14" weight="bold" />
+                Tambah frame
+              </button>
+            </div>
           </div>
 
           <div
@@ -41,8 +51,12 @@
             >
               <input v-model="selectedFrameKey" type="radio" name="frame" :value="f.id" class="peer sr-only" />
               <div
-                class="relative rounded-[22px] bg-white p-1.5 shadow-soft ring-2 transition-[box-shadow,transform] duration-150 ease-out-soft group-active:scale-[0.98] peer-focus-visible:outline peer-focus-visible:outline-4 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-500/30"
-                :class="f.id === selectedFrameKey ? 'ring-brand-500' : 'ring-transparent group-hover:ring-brand-200'"
+                class="relative rounded-[22px] bg-white p-1.5 ring-2 transition-[box-shadow,transform] duration-150 ease-out-soft group-active:scale-[0.98] peer-focus-visible:outline peer-focus-visible:outline-4 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-500/30"
+                :class="
+                  f.id === selectedFrameKey
+                    ? 'shadow-lift ring-brand-500'
+                    : 'shadow-soft ring-transparent group-hover:-translate-y-0.5 group-hover:ring-brand-200'
+                "
               >
                 <div class="flex h-60 items-center justify-center overflow-hidden rounded-[16px] bg-blush-100 p-3 md:h-56">
                   <img :src="f.url" :alt="f.name" loading="lazy" class="h-full w-full object-contain" />
@@ -53,6 +67,15 @@
                 >
                   <PhCheck :size="14" weight="bold" />
                 </span>
+                <button
+                  v-if="f.id.startsWith('custom/')"
+                  type="button"
+                  class="absolute left-3 top-3 grid size-7 place-items-center rounded-full bg-white/90 text-ink-500 opacity-0 shadow-soft backdrop-blur-sm transition-[background-color,color,opacity] duration-150 hover:bg-white hover:text-brand-700 focus-visible:opacity-100 group-hover:opacity-100"
+                  :aria-label="`Hapus frame ${f.name}`"
+                  @click.prevent="removeCustom(f.id)"
+                >
+                  <PhTrash :size="13" weight="bold" />
+                </button>
               </div>
               <p class="mt-3 line-clamp-2 px-1 text-[15px] font-semibold leading-snug">{{ f.name }}</p>
               <p class="px-1 text-[13px] text-ink-500">{{ f.layout.slots.length }} pose</p>
@@ -74,25 +97,23 @@
             <h2 id="filter-label" class="field-label">Filter</h2>
             <span v-if="selectedFrame" class="text-[13px] text-ink-500">Pratinjau mengikuti frame terpilih</span>
           </div>
-          <div role="radiogroup" aria-labelledby="filter-label" class="segmented mt-4 max-w-md grid-cols-2 sm:grid-cols-4">
+          <div
+            role="radiogroup"
+            aria-labelledby="filter-label"
+            class="segmented mt-4 max-w-md grid-cols-2 sm:w-fit sm:grid-cols-[repeat(4,auto)] sm:gap-x-2"
+          >
             <label v-for="opt in FILTERS" :key="opt.value" class="segment">
               <input v-model="filter" type="radio" name="filter" :value="opt.value" class="sr-only" />
               <span
                 aria-hidden="true"
-                class="relative block size-7 shrink-0 overflow-hidden rounded-[9px] bg-blush-100 ring-1 ring-black/10"
+                class="relative block size-8 shrink-0 overflow-hidden rounded-[10px] bg-blush-100 ring-1 ring-black/10"
               >
                 <img
-                  v-if="selectedFrame"
-                  :src="selectedFrame.url"
+                  src="/sample-photo.svg"
                   alt=""
-                  class="h-full w-full scale-[1.7] object-cover object-top"
+                  class="h-full w-full scale-[1.5] object-cover"
                   :style="{ filter: opt.css }"
                 />
-                <span
-                  v-else
-                  class="absolute inset-0 bg-gradient-to-br from-brand-400 to-sun"
-                  :style="{ filter: opt.css }"
-                ></span>
               </span>
               {{ opt.label }}
             </label>
@@ -105,7 +126,7 @@
             <h2 id="timer-label" class="field-label">Jeda antar pose</h2>
             <span class="text-[13px] text-ink-500">Waktu buat ganti pose</span>
           </div>
-          <div role="radiogroup" aria-labelledby="timer-label" class="segmented mt-4 max-w-md grid-cols-4">
+          <div role="radiogroup" aria-labelledby="timer-label" class="segmented mt-4 w-fit grid-cols-4">
             <label v-for="s in TIMERS" :key="s" class="segment">
               <input v-model.number="timerSeconds" type="radio" name="timer" :value="s" class="sr-only" />
               <span class="tabular-nums">{{ s }}</span>
@@ -136,19 +157,17 @@
             <div
               class="flex h-[min(520px,max(160px,calc(100dvh_-_27rem)))] items-center justify-center overflow-hidden rounded-[16px] bg-blush-100 p-4"
             >
-              <Transition name="swap" mode="out-in">
-                <FramePreview
-                  v-if="selectedFrame"
-                  :key="selectedFrame.url"
-                  :frame="selectedFrame"
-                  :filter="filter"
-                  class="h-full w-full"
-                />
-                <div v-else class="flex flex-col items-center gap-3 px-8 text-center text-ink-500">
-                  <PhImagesSquare :size="32" class="text-brand-300" />
-                  <p class="text-sm">Pilih frame untuk melihat pratinjau</p>
-                </div>
-              </Transition>
+              <FramePreview
+                v-if="selectedFrame"
+                :key="selectedFrame.url"
+                :frame="selectedFrame"
+                :filter="filter"
+                class="h-full w-full motion-safe:animate-rise"
+              />
+              <div v-else class="flex flex-col items-center gap-3 px-8 text-center text-ink-500">
+                <PhImagesSquare :size="32" class="text-brand-300" />
+                <p class="text-sm">Pilih frame untuk melihat pratinjau</p>
+              </div>
             </div>
           </div>
 
@@ -183,16 +202,26 @@
         <PhArrowRight :size="20" weight="bold" />
       </button>
     </div>
+
+    <AddFrameDialog :open="addFrameOpen" @close="addFrameOpen = false" @saved="onFrameSaved" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { PhArrowRight, PhCheck, PhImagesSquare, PhWarningCircle } from "@phosphor-icons/vue";
+import {
+  PhArrowRight,
+  PhCheck,
+  PhImagesSquare,
+  PhPlus,
+  PhTrash,
+  PhWarningCircle,
+} from "@phosphor-icons/vue";
 import TopBar from "@/components/TopBar.vue";
 import FramePreview from "@/components/FramePreview.vue";
-import { loadFrames, type Frame } from "@/lib/frames";
+import AddFrameDialog from "@/components/AddFrameDialog.vue";
+import { loadFrames, loadCustomFrames, deleteCustomFrame, type Frame } from "@/lib/frames";
 import { FILTERS, isFilterMode, type FilterMode } from "@/lib/filters";
 
 type LayoutPayload = {
@@ -219,6 +248,7 @@ const selectedFrameKey = ref("");
 const filter = ref<FilterMode>("none");
 const timerSeconds = ref<number>(3);
 const understand = ref(false);
+const addFrameOpen = ref(false);
 
 const selectedFrame = computed(() => frames.value.find((f) => f.id === selectedFrameKey.value));
 const canGo = computed(() => understand.value && !!selectedFrame.value);
@@ -251,7 +281,8 @@ function readStoredSettings(): Partial<StoredSettings> {
 async function init() {
   loading.value = true;
   const list = await loadFrames();
-  frames.value = list.frames;
+  // Custom frames (uploaded on this device) come first so they're easy to find
+  frames.value = [...loadCustomFrames(), ...list.frames];
   loadError.value = list.error;
 
   // Restore the previously selected frame by URL match
@@ -261,6 +292,18 @@ async function init() {
   else if (frames.value.length === 1) selectedFrameKey.value = frames.value[0]!.id;
 
   loading.value = false;
+}
+
+// New custom frame: select it immediately
+function onFrameSaved(frame: Frame) {
+  addFrameOpen.value = false;
+  frames.value = [frame, ...frames.value];
+  selectedFrameKey.value = frame.id;
+}
+
+function removeCustom(id: string) {
+  frames.value = deleteCustomFrame(id);
+  if (selectedFrameKey.value === id) selectedFrameKey.value = "";
 }
 
 function go() {

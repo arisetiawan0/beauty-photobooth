@@ -89,7 +89,7 @@
 
   /* Segmented control */
   .segmented {
-    @apply grid gap-1 rounded-full bg-ink-900/[0.05] p-1;
+    @apply grid gap-1 rounded-full bg-white/60 p-1 ring-1 ring-ink-900/[0.04];
   }
   .segment {
     @apply relative flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full px-3 text-[15px] font-medium text-ink-500;

@@ -41,13 +41,15 @@ export function strip3Layout(): FrameLayout {
   };
 }
 
-// Parse a layout payload persisted in sessionStorage (selfsnap.settings.layout)
-export function resolveLayout(raw: unknown): FrameLayout {
+// Strict validation — returns null instead of falling back (used by custom frames)
+export function parseLayout(raw: unknown): FrameLayout | null {
   const l = raw as Partial<FrameLayout> | undefined;
   if (
     l &&
     typeof l.canvasW === "number" &&
     typeof l.canvasH === "number" &&
+    l.canvasW > 0 &&
+    l.canvasH > 0 &&
     Array.isArray(l.slots) &&
     l.slots.length > 0 &&
     l.slots.every(
@@ -67,7 +69,12 @@ export function resolveLayout(raw: unknown): FrameLayout {
         : "default",
     };
   }
-  return grid4Layout();
+  return null;
+}
+
+// Parse a layout payload persisted in sessionStorage (selfsnap.settings.layout)
+export function resolveLayout(raw: unknown): FrameLayout {
+  return parseLayout(raw) ?? grid4Layout();
 }
 
 export function compute4GridSlots(
