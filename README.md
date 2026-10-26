@@ -72,7 +72,6 @@ This guarantees **what you see in the booth is exactly what you get in the final
 ## 💻 Run locally
 
 ```bash
-cd selfsnap-web
 npm install
 npm run dev
 ```
@@ -81,7 +80,7 @@ npm run dev
 
 ### One-time setup
 
-1. Put your **cloud name** (Cloudinary Console > Dashboard) in `selfsnap-web/.env.local`:
+1. Put your **cloud name** (Cloudinary Console > Dashboard) in `.env.local`:
    `CLOUDINARY_CLOUD_NAME=your-cloud-name` (see `.env.example`; the same file holds the email keys)
 2. Cloudinary Console > **Settings > Security** > *Restricted media types*: **uncheck "Resource list"**.
    This lets the app read the list of frames by tag (it only exposes images that carry a tag).
@@ -101,17 +100,17 @@ npm run dev
 - **Name in the app:** the asset's *Title* (caption) if set, otherwise its file name.
 - **Replace:** overwrite the asset or upload a new one. **Remove:** delete it or remove its tag.
 - **New frame design** with different photo positions: add a layout in
-  `selfsnap-web/src/lib/layout.ts` and a tag for it in `FRAME_TAGS` (`src/lib/frames.ts`), then redeploy.
+  `src/lib/layout.ts` and a tag for it in `FRAME_TAGS` (`src/lib/frames.ts`), then redeploy.
 
 ### Local frames
 
-Frames in `selfsnap-web/public/local-frames/` (listed in `src/lib/frames.ts`) are bundled with the
+Frames in `public/local-frames/` (listed in `src/lib/frames.ts`) are bundled with the
 app and work without Cloudinary. A local frame is hidden once a Cloudinary frame has the same name.
 
 ## 🖨️ Print
 
 **Cetak** prints the strip edge to edge, sized for the printer paper set in
-`selfsnap-web/src/lib/print.ts`:
+`src/lib/print.ts`:
 
 | Setting | Value | Result |
 |---------|-------|--------|
@@ -132,7 +131,7 @@ Grid frames use the printer's own paper size (rotated to fit when landscape).
 **Email** sends a download link. `api/send-photo.ts` (a Vercel Function) uploads the strip to
 Cloudinary with a signed upload and sends the email with Resend. Secrets never reach the browser.
 
-1. Copy `selfsnap-web/.env.example` to `selfsnap-web/.env.local` and fill it in:
+1. Copy `.env.example` to `.env.local` and fill it in:
    - `RESEND_API_KEY`: from resend.com > API Keys
    - `EMAIL_FROM`: a sender on a **domain verified in Resend**, e.g. `beauty photobooth <foto@beauty.co.id>`.
      Without a verified domain, `onboarding@resend.dev` only delivers to your own Resend account email.
@@ -145,7 +144,6 @@ Abuse guards: email/image validation, JPEG only up to ~3 MB, 5 sends per IP per 
 ## 🚀 Deploy (Vercel)
 
 ```bash
-cd selfsnap-web
 npx vercel --prod
 ```
 

@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 // Uploads the finished strip to Cloudinary (signed upload, secret stays on the server)
 // and emails the link with Resend.
 //
-// Env (Vercel project settings, or selfsnap-web/.env.local for `npm run dev`):
+// Env (Vercel project settings, or .env.local for `npm run dev`):
 //   RESEND_API_KEY, EMAIL_FROM,
 //   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
 

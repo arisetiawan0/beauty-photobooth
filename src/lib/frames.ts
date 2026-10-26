@@ -14,7 +14,7 @@ export const FRAME_TAGS: Record<string, () => FrameLayout> = {
   "selfsnap-grid4": grid4Layout, // 2x2 grid
 };
 
-// Bundled with the app (selfsnap-web/public/local-frames) — works without Cloudinary.
+// Bundled with the app (public/local-frames) — works without Cloudinary.
 // A local frame is hidden when a Cloudinary frame has the same name.
 export const LOCAL_FRAMES: Frame[] = [
   {
