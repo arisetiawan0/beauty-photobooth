@@ -137,12 +137,12 @@
               class="flex h-[min(520px,max(160px,calc(100dvh_-_27rem)))] items-center justify-center overflow-hidden rounded-[16px] bg-blush-100 p-4"
             >
               <Transition name="swap" mode="out-in">
-                <img
+                <FramePreview
                   v-if="selectedFrame"
                   :key="selectedFrame.url"
-                  :src="selectedFrame.url"
-                  :alt="`Pratinjau ${selectedFrame.name}`"
-                  class="h-full w-full object-contain drop-shadow-[0_12px_24px_rgb(140_15_82_/_0.18)]"
+                  :frame="selectedFrame"
+                  :filter="filter"
+                  class="h-full w-full"
                 />
                 <div v-else class="flex flex-col items-center gap-3 px-8 text-center text-ink-500">
                   <PhImagesSquare :size="32" class="text-brand-300" />
@@ -191,6 +191,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { PhArrowRight, PhCheck, PhImagesSquare, PhWarningCircle } from "@phosphor-icons/vue";
 import TopBar from "@/components/TopBar.vue";
+import FramePreview from "@/components/FramePreview.vue";
 import { loadFrames, type Frame } from "@/lib/frames";
 import { FILTERS, isFilterMode, type FilterMode } from "@/lib/filters";
 
