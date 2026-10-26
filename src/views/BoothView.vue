@@ -49,6 +49,9 @@
               <span class="absolute bottom-0 right-0 size-7 rounded-br-[10px] border-b-2 border-r-2 border-white/70"></span>
             </div>
 
+            <!-- Ambient emoji stickers around the frame (hidden while shooting) -->
+            <StickerLayer :running="isRunning" />
+
             <span
               class="absolute left-4 top-4 rounded-full bg-ink-950/55 px-3 py-1.5 text-[13px] font-semibold tabular-nums ring-1 ring-white/10 backdrop-blur-md md:left-6 md:top-6"
             >
@@ -154,6 +157,7 @@ import {
 } from "@phosphor-icons/vue";
 import ShutterButton from "@/components/ShutterButton.vue";
 import StripPreview from "@/components/StripPreview.vue";
+import StickerLayer from "@/components/StickerLayer.vue";
 import TopBar from "@/components/TopBar.vue";
 import { resolveLayout } from "@/lib/layout";
 import { filterCss, isFilterMode, type FilterMode } from "@/lib/filters";
