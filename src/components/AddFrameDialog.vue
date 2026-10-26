@@ -99,7 +99,8 @@
               kotak foto
             </p>
             <p class="mt-2 text-[13px] leading-relaxed text-ink-500">
-              Tarik kotak untuk memindahkan, tarik bulatan di pojok untuk mengubah ukuran. Urutan kotak = urutan pose.
+              Tarik kotak untuk memindahkan, tarik bulatan di pojok untuk mengubah ukuran. Kotak menempel otomatis ke
+              tepi kotak lain &amp; garis tengah. Urutan kotak = urutan pose.
             </p>
           </div>
 
@@ -114,6 +115,17 @@
             </button>
           </div>
 
+          <button
+            type="button"
+            class="btn btn-ghost h-11 text-sm"
+            :disabled="slots.length < 2"
+            title="Ukuran semua kotak mengikuti kotak pertama"
+            @click="equalizeSize"
+          >
+            <PhFrameCorners :size="16" weight="bold" />
+            Samakan ukuran
+          </button>
+
           <button type="button" class="btn btn-ghost h-11 text-sm" @click="resetImage">
             <PhArrowCounterClockwise :size="16" weight="bold" />
             Ganti gambar
@@ -123,6 +135,9 @@
             <PhCheck :size="18" weight="bold" />
             {{ saving ? "Menyimpan…" : "Simpan frame" }}
           </button>
+          <p class="text-center text-[12px] leading-snug text-ink-400">
+            Frame ter-upload ke Cloudinary — tampil di semua perangkat (±60 detik).
+          </p>
           <p v-if="error" role="alert" class="text-[13px] font-medium text-brand-700">{{ error }}</p>
         </div>
       </div>
@@ -132,8 +147,9 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { PhArrowCounterClockwise, PhCheck, PhPlus, PhTrash, PhUploadSimple, PhX } from "@phosphor-icons/vue";
-import { saveCustomFrame, type Frame } from "@/lib/frames";
+import { PhArrowCounterClockwise, PhCheck, PhFrameCorners, PhPlus, PhTrash, PhUploadSimple, PhX } from "@phosphor-icons/vue";
+import { saveCustomFrame, layoutTag, type Frame } from "@/lib/frames";
+import { uploadFrameToCloudinary, cloudinaryCloudName } from "@/lib/cloudinary";
 import type { FrameLayout, Rect } from "@/lib/layout";
 
 const props = defineProps<{ open: boolean }>();
@@ -259,6 +275,33 @@ function onDragStart(e: PointerEvent, i: number, mode: "move" | "resize", s: Rec
   drag = { i, mode, px: e.clientX, py: e.clientY, orig: { ...s } };
 }
 
+function equalizeSize() {
+  if (slots.value.length < 2) return;
+  const { w, h } = slots.value[0]!;
+  slots.value = slots.value.map((s) => ({
+    w,
+    h,
+    x: clamp(s.x, 0, imgW.value - w),
+    y: clamp(s.y, 0, imgH.value - h),
+  }));
+}
+
+// Snap threshold in image pixels; scales with image so feel stays consistent
+const SNAP_TOLERANCE = () => Math.max(6, Math.round(Math.min(imgW.value, imgH.value) * 0.012));
+
+function snapValue(v: number, targets: number[], tol: number) {
+  let best = v;
+  let bestDist = tol;
+  for (const t of targets) {
+    const d = Math.abs(v - t);
+    if (d < bestDist) {
+      bestDist = d;
+      best = t;
+    }
+  }
+  return best;
+}
+
 function onPointerMove(e: PointerEvent) {
   if (!drag) return;
   const rect = editorEl.value?.getBoundingClientRect();
@@ -276,6 +319,7 @@ function onPointerMove(e: PointerEvent) {
       x: clamp(o.x + dx, 0, imgW.value - o.w),
       y: clamp(o.y + dy, 0, imgH.value - o.h),
     };
+    next = applySnapMove(next, drag.i);
   } else {
     next = {
       x: o.x,
@@ -283,8 +327,43 @@ function onPointerMove(e: PointerEvent) {
       w: clamp(o.w + dx, min, imgW.value - o.x),
       h: clamp(o.h + dy, min, imgH.value - o.y),
     };
+    next = applySnapResize(next, drag.i);
   }
   slots.value[drag.i] = next;
+}
+
+// While moving, snap the box's left/top edges (keeps size fixed)
+function applySnapMove(r: Rect, i: number): Rect {
+  const tol = SNAP_TOLERANCE();
+  const others = slots.value.filter((_, idx) => idx !== i);
+  const xTargets = [0, imgW.value / 2, imgW.value - r.w, imgW.value];
+  const yTargets = [0, imgH.value / 2, imgH.value - r.h, imgH.value];
+  for (const o of others) {
+    xTargets.push(o.x, o.x + o.w / 2, o.x + o.w, o.x + o.w - r.w);
+    yTargets.push(o.y, o.y + o.h / 2, o.y + o.h, o.y + o.h - r.h);
+  }
+  return {
+    ...r,
+    x: snapValue(r.x, xTargets, tol),
+    y: snapValue(r.y, yTargets, tol),
+  };
+}
+
+// While resizing, snap the moving right/bottom edge to other slots' edges/centers
+function applySnapResize(r: Rect, i: number): Rect {
+  const tol = SNAP_TOLERANCE();
+  const others = slots.value.filter((_, idx) => idx !== i);
+  const xTargets = [0, imgW.value / 2, imgW.value];
+  const yTargets = [0, imgH.value / 2, imgH.value];
+  for (const o of others) {
+    xTargets.push(o.x, o.x + o.w / 2, o.x + o.w);
+    yTargets.push(o.y, o.y + o.h / 2, o.y + o.h);
+  }
+  return {
+    ...r,
+    w: snapValue(r.x + r.w, xTargets, tol) - r.x,
+    h: snapValue(r.y + r.h, yTargets, tol) - r.y,
+  };
 }
 
 function onDragEnd() {
@@ -295,7 +374,25 @@ function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, Math.round(v)));
 }
 
-function save() {
+// Slug + short random suffix, e.g. "WH Biru" -> "wh-biru_k3x9qz". Suffix keeps
+// repeat uploads of the same name from colliding (preset has overwrite:false);
+// nameFromPublicId() strips the suffix on the read side.
+function publicIdFor(name: string) {
+  const suffix = Math.random().toString(36).slice(2, 8).padEnd(6, "0");
+  return `${slugify(name)}_${suffix}`;
+}
+function slugify(s: string) {
+  return (
+    s
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "frame"
+  );
+}
+
+async function save() {
   error.value = "";
   saving.value = true;
   try {
@@ -305,6 +402,25 @@ function save() {
       slots: slots.value.map((s) => ({ ...s })),
       footer: "none",
     };
+
+    // Try Cloudinary first so the frame reaches every device; on failure keep
+    // the localStorage copy so the booth still works offline.
+    let cloudError: string | null = null;
+    if (cloudinaryCloudName()) {
+      const tag = layoutTag(layout);
+      if (tag) {
+        try {
+          await uploadFrameToCloudinary(imgUrl.value, {
+            publicId: publicIdFor(name.value),
+            caption: name.value.trim() || "Frame saya",
+            tags: [tag],
+          });
+        } catch (e: any) {
+          cloudError = e?.message ?? "Upload Cloudinary gagal.";
+        }
+      }
+    }
+
     const frame: Frame = {
       id: `custom/${Date.now()}`,
       name: name.value.trim() || "Frame saya",
@@ -314,6 +430,7 @@ function save() {
     saveCustomFrame(frame);
     emit("saved", frame);
     dialogEl.value?.close();
+    if (cloudError) console.warn("Frame tersimpan lokal saja:", cloudError);
   } catch (err: any) {
     error.value = err?.message ?? "Gagal menyimpan frame.";
   } finally {

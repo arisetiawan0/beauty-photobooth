@@ -41,6 +41,24 @@ export function strip3Layout(): FrameLayout {
   };
 }
 
+// Beauty Warehouse Sale 2026 — 6-slot 2x3 grid, 1050x1485 (A-series print ratio).
+// Slot rects measured from the artwork's photo boxes (same art across colorways).
+export function grid6Layout(): FrameLayout {
+  return {
+    canvasW: 1050,
+    canvasH: 1485,
+    slots: [
+      { x: 42, y: 437, w: 476, h: 327 },
+      { x: 532, y: 437, w: 476, h: 327 },
+      { x: 42, y: 777, w: 476, h: 327 },
+      { x: 532, y: 777, w: 476, h: 327 },
+      { x: 42, y: 1117, w: 476, h: 327 },
+      { x: 532, y: 1117, w: 476, h: 327 },
+    ],
+    footer: "none",
+  };
+}
+
 // Strict validation — returns null instead of falling back (used by custom frames)
 export function parseLayout(raw: unknown): FrameLayout | null {
   const l = raw as Partial<FrameLayout> | undefined;

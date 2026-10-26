@@ -1,5 +1,4 @@
-import { strip3Layout, grid4Layout, parseLayout, type FrameLayout } from "./layout";
-
+import { strip3Layout, grid4Layout, grid6Layout, parseLayout, type FrameLayout } from "./layout";
 export type Frame = {
   id: string;
   name: string;
@@ -12,22 +11,39 @@ export type Frame = {
 export const FRAME_TAGS: Record<string, () => FrameLayout> = {
   "selfsnap-strip3": strip3Layout, // 3-photo strip (Warehouse Sale template)
   "selfsnap-grid4": grid4Layout, // 2x2 grid
+  "selfsnap-grid6": grid6Layout, // 2x3 grid (Warehouse Sale 2026)
 };
+
+// Layout -> tag used when uploading a frame from the app. Slot count must match
+// one of the known layouts; custom irregular layouts stay local-only.
+export function layoutTag(layout: FrameLayout): string | null {
+  const n = layout.slots.length;
+  if (n === 3) return "selfsnap-strip3";
+  if (n === 4) return "selfsnap-grid4";
+  if (n === 6) return "selfsnap-grid6";
+  return null;
+}
 
 // Bundled with the app (public/local-frames) — works without Cloudinary.
 // A local frame is hidden when a Cloudinary frame has the same name.
 export const LOCAL_FRAMES: Frame[] = [
   {
-    id: "local/warehouse-sale-black",
-    name: "Warehouse Sale Black",
-    url: "/local-frames/warehouse-sale-black.png",
-    layout: strip3Layout(),
+    id: "local/warehouse-sale-2026-biru",
+    name: "WH Biru",
+    url: "/local-frames/warehouse-sale-2026-biru.png",
+    layout: grid6Layout(),
   },
   {
-    id: "local/warehouse-sale-yellow",
-    name: "Warehouse Sale Yellow",
-    url: "/local-frames/warehouse-sale-yellow.png",
-    layout: strip3Layout(),
+    id: "local/warehouse-sale-2026-kuning",
+    name: "WH Kuning",
+    url: "/local-frames/warehouse-sale-2026-kuning.png",
+    layout: grid6Layout(),
+  },
+  {
+    id: "local/warehouse-sale-2026-pink",
+    name: "WH Pink",
+    url: "/local-frames/warehouse-sale-2026-pink.png",
+    layout: grid6Layout(),
   },
 ];
 
