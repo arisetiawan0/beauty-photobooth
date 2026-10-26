@@ -73,10 +73,6 @@ export default {
           from: { opacity: "0", transform: "scale(0.25)", filter: "blur(4px)" },
           to: { opacity: "1", transform: "scale(1)", filter: "blur(0px)" },
         },
-        sticker: {
-          "0%, 100%": { transform: "translate(0, 0) rotate(-6deg)", opacity: "0.9" },
-          "50%": { transform: "translate(6px, -12px) rotate(7deg)", opacity: "1" },
-        },
       },
       animation: {
         rise: "rise 640ms cubic-bezier(0.16, 1, 0.3, 1) both",
@@ -85,7 +81,6 @@ export default {
         flash: "flash 420ms ease-out both",
         shimmer: "shimmer 1.8s linear infinite",
         "badge-in": "badge-in 240ms cubic-bezier(0.2, 0, 0, 1) both",
-        sticker: "sticker 6s ease-in-out infinite",
       },
     },
   },
