@@ -156,8 +156,8 @@ import ShutterButton from "@/components/ShutterButton.vue";
 import StripPreview from "@/components/StripPreview.vue";
 import TopBar from "@/components/TopBar.vue";
 import { resolveLayout } from "@/lib/layout";
+import { filterCss, isFilterMode, type FilterMode } from "@/lib/filters";
 
-type FilterMode = "none" | "bw" | "sepia";
 type Settings = { frameUrl: string; filter: FilterMode; timerSeconds: number; layout?: unknown };
 
 const router = useRouter();
@@ -209,18 +209,18 @@ const statusText = computed(() => {
   return `Atur posisi di kamera, lalu tekan tombol. ${total} foto otomatis.`;
 });
 
-const previewCssFilter = computed(() => {
-  if (settings.filter === "bw") return "grayscale(1)";
-  if (settings.filter === "sepia") return "sepia(1)";
-  return "none";
-});
+const previewCssFilter = computed(() => filterCss(settings.filter));
 
 function loadSettings(): Settings {
+  const base: Settings = { frameUrl: "", filter: "none", timerSeconds: 3 };
   try {
     const raw = sessionStorage.getItem("selfsnap.settings");
-    if (raw) return { frameUrl: "", filter: "none", timerSeconds: 3, ...JSON.parse(raw) };
-  } catch {}
-  return { frameUrl: "", filter: "none", timerSeconds: 3 };
+    if (!raw) return base;
+    const parsed = JSON.parse(raw);
+    return { ...base, ...parsed, filter: isFilterMode(parsed.filter) ? parsed.filter : "none" };
+  } catch {
+    return base;
+  }
 }
 
 function saveShotsToSession(dataUrls: string[]) {
@@ -301,10 +301,10 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// Filters are applied exactly once, here at capture time; ResultView composes
+// the saved shots as-is.
 function canvasFilterString(mode: FilterMode) {
-  if (mode === "bw") return "grayscale(1)";
-  if (mode === "sepia") return "sepia(1)";
-  return "none";
+  return filterCss(mode);
 }
 
 function drawVideoCoverToCanvas(
@@ -354,7 +354,6 @@ async function captureOneShot(_: number): Promise<string> {
   if (!ctx) throw new Error("Shot canvas context missing");
 
   drawVideoCoverToCanvas(ctx, v, outW, outH, settings.filter);
-  applyPixelFilter(ctx, settings.filter, outW, outH);
 
   return shotCanvas.toDataURL("image/jpeg", 0.92);
 }
@@ -408,37 +407,4 @@ onBeforeUnmount(() => {
     streamRef.value = null;
   }
 });
-
-function applyPixelFilter(ctx: CanvasRenderingContext2D, mode: FilterMode, w: number, h: number) {
-  if (mode === "none") return;
-
-  const img = ctx.getImageData(0, 0, w, h);
-  const d = img.data; // Uint8ClampedArray
-
-  if (mode === "bw") {
-    for (let i = 0; i < d.length; i += 4) {
-      const r = d[i] ?? 0;
-      const g = d[i + 1] ?? 0;
-      const b = d[i + 2] ?? 0;
-
-      const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-
-      d[i] = y;
-      d[i + 1] = y;
-      d[i + 2] = y;
-    }
-  } else if (mode === "sepia") {
-    for (let i = 0; i < d.length; i += 4) {
-      const r = d[i] ?? 0;
-      const g = d[i + 1] ?? 0;
-      const b = d[i + 2] ?? 0;
-
-      d[i]     = Math.min(255, 0.393 * r + 0.769 * g + 0.189 * b);
-      d[i + 1] = Math.min(255, 0.349 * r + 0.686 * g + 0.168 * b);
-      d[i + 2] = Math.min(255, 0.272 * r + 0.534 * g + 0.131 * b);
-    }
-  }
-
-  ctx.putImageData(img, 0, 0);
-}
 </script>

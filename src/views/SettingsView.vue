@@ -73,7 +73,7 @@
         <!-- Filter -->
         <div class="motion-safe:animate-rise" style="animation-delay: 160ms">
           <h2 id="filter-label" class="field-label">Filter</h2>
-          <div role="radiogroup" aria-labelledby="filter-label" class="segmented mt-4 max-w-md grid-cols-3">
+          <div role="radiogroup" aria-labelledby="filter-label" class="segmented mt-4 max-w-md grid-cols-4">
             <label v-for="opt in FILTERS" :key="opt.value" class="segment">
               <input v-model="filter" type="radio" name="filter" :value="opt.value" class="sr-only" />
               <span
@@ -176,8 +176,8 @@ import { useRouter } from "vue-router";
 import { PhArrowRight, PhCheck, PhImagesSquare, PhWarningCircle } from "@phosphor-icons/vue";
 import TopBar from "@/components/TopBar.vue";
 import { loadFrames, type Frame } from "@/lib/frames";
+import { FILTERS, isFilterMode, type FilterMode } from "@/lib/filters";
 
-type FilterMode = "none" | "bw" | "sepia";
 type LayoutPayload = {
   canvasW: number;
   canvasH: number;
@@ -191,11 +191,6 @@ type StoredSettings = {
   layout?: LayoutPayload;
 };
 
-const FILTERS: { value: FilterMode; label: string; css: string }[] = [
-  { value: "none", label: "Normal", css: "none" },
-  { value: "bw", label: "Mono", css: "grayscale(1)" },
-  { value: "sepia", label: "Sepia", css: "sepia(1)" },
-];
 const TIMERS = [1, 3, 5, 10];
 
 const router = useRouter();
@@ -228,7 +223,7 @@ function readStoredSettings(): Partial<StoredSettings> {
     const parsed = JSON.parse(raw);
     return {
       frameUrl: typeof parsed.frameUrl === "string" ? parsed.frameUrl : "",
-      filter: (["none", "bw", "sepia"].includes(parsed.filter) ? parsed.filter : "none") as FilterMode,
+      filter: isFilterMode(parsed.filter) ? parsed.filter : "none",
       timerSeconds: typeof parsed.timerSeconds === "number" ? parsed.timerSeconds : 3,
     };
   } catch {

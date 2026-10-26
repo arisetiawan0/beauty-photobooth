@@ -182,8 +182,8 @@ import TopBar from "@/components/TopBar.vue";
 import { resolveLayout } from "@/lib/layout";
 import { printImage } from "@/lib/print";
 import { pickTextColorFromRegion } from "@/lib/canvasColor";
+import { filterLabel as labelFor, isFilterMode, type FilterMode } from "@/lib/filters";
 
-type FilterMode = "none" | "bw" | "sepia";
 type Settings = {
   frameUrl: string;
   filter: FilterMode;
@@ -213,9 +213,7 @@ const printing = ref(false);
 const emailOpen = ref(false);
 let savedTimer: ReturnType<typeof setTimeout> | undefined;
 
-const filterLabel = computed(
-  () => ({ none: "Normal", bw: "Mono", sepia: "Sepia" })[settings.filter] ?? "Normal"
-);
+const filterLabel = computed(() => labelFor(settings.filter));
 
 // Tall strips fit the viewport height; wider grids fit a fixed width
 const canvasSize = computed(() =>
@@ -225,11 +223,15 @@ const canvasSize = computed(() =>
 );
 
 function loadSettings(): Settings {
+  const base: Settings = { frameUrl: "", filter: "none", timerSeconds: 3 };
   try {
     const raw = sessionStorage.getItem("selfsnap.settings");
-    if (raw) return { frameUrl: "", filter: "none", timerSeconds: 3, ...JSON.parse(raw) };
-  } catch {}
-  return { frameUrl: "", filter: "none", timerSeconds: 3 };
+    if (!raw) return base;
+    const parsed = JSON.parse(raw);
+    return { ...base, ...parsed, filter: isFilterMode(parsed.filter) ? parsed.filter : "none" };
+  } catch {
+    return base;
+  }
 }
 
 function loadShots(): string[] {
@@ -250,12 +252,8 @@ function formatDate(d: Date) {
   return `${dd}-${mm}-${d.getFullYear()}`;
 }
 
-function canvasFilterString(mode: FilterMode) {
-  if (mode === "bw") return "grayscale(1)";
-  if (mode === "sepia") return "sepia(1)";
-  return "none";
-}
-
+// Shots are captured with the filter already applied in BoothView, so the
+// composition draws them as-is.
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -273,8 +271,7 @@ function drawCover(
   x: number,
   y: number,
   w: number,
-  h: number,
-  filter: FilterMode
+  h: number
 ) {
   const iw = img.naturalWidth;
   const ih = img.naturalHeight;
@@ -286,10 +283,7 @@ function drawCover(
   const sx = (iw - sw) / 2;
   const sy = (ih - sh) / 2;
 
-  ctx.save();
-  ctx.filter = canvasFilterString(filter);
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-  ctx.restore();
 }
 
 async function compose() {
@@ -347,7 +341,7 @@ async function compose() {
     ctx.rect(slot.x, slot.y, slot.w, slot.h);
     ctx.clip();
 
-    drawCover(ctx, shotImg, slot.x, slot.y, slot.w, slot.h, settings.filter);
+    drawCover(ctx, shotImg, slot.x, slot.y, slot.w, slot.h);
     ctx.restore();
   }
 
