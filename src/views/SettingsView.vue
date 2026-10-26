@@ -7,11 +7,9 @@
     >
       <section class="min-w-0 space-y-10">
         <header class="motion-safe:animate-rise">
-          <h1 class="text-[32px] font-bold leading-[1.05] tracking-[-0.035em] md:text-[44px]">
-            Atur photobooth kamu
-          </h1>
-          <p class="mt-3 max-w-[48ch] text-base leading-relaxed text-ink-500">
-            Pilih frame, filter, dan timer. Kamera langsung memotret begitu hitungan mundur selesai.
+          <h1 class="text-[30px] font-bold leading-[1.05] tracking-[-0.03em] md:text-[40px]">Atur sesi fotomu</h1>
+          <p class="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-ink-500 md:text-base">
+            Tiga langkah singkat: pilih frame, tentukan filter, lalu atur jeda antar pose.
           </p>
         </header>
 
@@ -72,15 +70,30 @@
 
         <!-- Filter -->
         <div class="motion-safe:animate-rise" style="animation-delay: 160ms">
-          <h2 id="filter-label" class="field-label">Filter</h2>
-          <div role="radiogroup" aria-labelledby="filter-label" class="segmented mt-4 max-w-md grid-cols-4">
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 id="filter-label" class="field-label">Filter</h2>
+            <span v-if="selectedFrame" class="text-[13px] text-ink-500">Pratinjau mengikuti frame terpilih</span>
+          </div>
+          <div role="radiogroup" aria-labelledby="filter-label" class="segmented mt-4 max-w-md grid-cols-2 sm:grid-cols-4">
             <label v-for="opt in FILTERS" :key="opt.value" class="segment">
               <input v-model="filter" type="radio" name="filter" :value="opt.value" class="sr-only" />
               <span
                 aria-hidden="true"
-                class="size-4 rounded-full bg-gradient-to-br from-brand-400 to-sun ring-1 ring-black/10"
-                :style="{ filter: opt.css }"
-              ></span>
+                class="relative block size-7 shrink-0 overflow-hidden rounded-[9px] bg-blush-100 ring-1 ring-black/10"
+              >
+                <img
+                  v-if="selectedFrame"
+                  :src="selectedFrame.url"
+                  alt=""
+                  class="h-full w-full scale-[1.7] object-cover object-top"
+                  :style="{ filter: opt.css }"
+                />
+                <span
+                  v-else
+                  class="absolute inset-0 bg-gradient-to-br from-brand-400 to-sun"
+                  :style="{ filter: opt.css }"
+                ></span>
+              </span>
               {{ opt.label }}
             </label>
           </div>
@@ -88,7 +101,10 @@
 
         <!-- Timer -->
         <div class="motion-safe:animate-rise" style="animation-delay: 240ms">
-          <h2 id="timer-label" class="field-label">Timer per pose</h2>
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 id="timer-label" class="field-label">Jeda antar pose</h2>
+            <span class="text-[13px] text-ink-500">Waktu buat ganti pose</span>
+          </div>
           <div role="radiogroup" aria-labelledby="timer-label" class="segmented mt-4 max-w-md grid-cols-4">
             <label v-for="s in TIMERS" :key="s" class="segment">
               <input v-model.number="timerSeconds" type="radio" name="timer" :value="s" class="sr-only" />
