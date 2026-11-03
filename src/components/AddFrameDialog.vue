@@ -37,7 +37,7 @@
           <span class="mt-1 block text-sm text-ink-500">Klik untuk upload — PNG atau JPG</span>
         </span>
         <span class="rounded-full bg-white px-4 py-1.5 text-[13px] font-semibold text-brand-600 shadow-soft">
-          Idealnya rasio 105 × 148,5 mm
+          Idealnya rasio 102 × 152 mm
         </span>
         <input type="file" accept="image/png,image/jpeg,image/webp" class="sr-only" @change="onFile" />
       </label>

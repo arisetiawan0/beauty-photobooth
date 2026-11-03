@@ -1,16 +1,17 @@
 import type { FrameLayout } from "./layout";
 
-// Printer paper: 105 x 148.5 mm (A6), portrait, edge to edge.
-// Frames designed full-bleed for this page print without borders; narrower
-// artwork (e.g. the old 53 x 148 mm strips) is centered with blank side margins.
-export const PAPER_MM = { w: 105, h: 148.5 };
+// Printer paper: 102 x 152 mm (4R), portrait, edge to edge.
+// Frames designed full-bleed for this page print without borders; artwork with a
+// different aspect ratio (e.g. the old 105 x 148.5 mm grids) is scaled to cover and
+// cropped evenly on the left/right sides.
+export const PAPER_MM = { w: 102, h: 152 };
 
 export function pageSizeFor(_layout: FrameLayout): string {
   return `${PAPER_MM.w}mm ${PAPER_MM.h}mm`;
 }
 
 /**
- * Prints one image edge to edge on the 105 x 148.5 mm page, via a hidden iframe so the
+ * Prints one image scaled to cover the 102 x 152 mm page, via a hidden iframe so the
  * app's own layout is never printed. Chrome started with --kiosk-printing skips the dialog
  * and prints straight to the default printer.
  */
@@ -23,7 +24,7 @@ export async function printImage(blob: Blob, layout: FrameLayout): Promise<void>
   iframe.srcdoc = `<!doctype html><html><head><style>
     @page { size: ${pageSizeFor(layout)}; margin: 0; }
     html, body { margin: 0; padding: 0; }
-    img { display: block; width: ${PAPER_MM.w}mm; height: ${PAPER_MM.h}mm; object-fit: contain; }
+    img { display: block; width: ${PAPER_MM.w}mm; height: ${PAPER_MM.h}mm; object-fit: cover; }
   </style></head><body><img src="${url}" alt=""></body></html>`;
 
   const loaded = new Promise<void>((resolve) => (iframe.onload = () => resolve()));
