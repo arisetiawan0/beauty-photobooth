@@ -1,4 +1,4 @@
-import { strip3Layout, grid4Layout, grid6Layout, parseLayout, type FrameLayout } from "./layout";
+import { strip3Layout, grid4Layout, grid6Layout, grid6R4Layout, parseLayout, type FrameLayout } from "./layout";
 export type Frame = {
   id: string;
   name: string;
@@ -12,6 +12,7 @@ export const FRAME_TAGS: Record<string, () => FrameLayout> = {
   "selfsnap-strip3": strip3Layout, // 3-photo strip (Warehouse Sale template)
   "selfsnap-grid4": grid4Layout, // 2x2 grid
   "selfsnap-grid6": grid6Layout, // 2x3 grid (Warehouse Sale 2026)
+  "selfsnap-grid6-4r": grid6R4Layout, // 2x3 grid 4R (Warehouse Sale 2026 4R)
 };
 
 // Layout -> tag used when uploading a frame from the app. Slot count must match
@@ -44,6 +45,12 @@ export const LOCAL_FRAMES: Frame[] = [
     name: "WH Pink",
     url: "/local-frames/warehouse-sale-2026-pink.png",
     layout: grid6Layout(),
+  },
+  {
+    id: "local/warehouse-sale-2026-4r",
+    name: "WH Pink 4R",
+    url: "/local-frames/warehouse-sale-2026-4r.png",
+    layout: grid6R4Layout(),
   },
 ];
 
