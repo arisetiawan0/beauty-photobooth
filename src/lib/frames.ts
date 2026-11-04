@@ -29,24 +29,6 @@ export function layoutTag(layout: FrameLayout): string | null {
 // A local frame is hidden when a Cloudinary frame has the same name.
 export const LOCAL_FRAMES: Frame[] = [
   {
-    id: "local/warehouse-sale-2026-biru",
-    name: "WH Biru",
-    url: "/local-frames/warehouse-sale-2026-biru.png",
-    layout: grid6Layout(),
-  },
-  {
-    id: "local/warehouse-sale-2026-kuning",
-    name: "WH Kuning",
-    url: "/local-frames/warehouse-sale-2026-kuning.png",
-    layout: grid6Layout(),
-  },
-  {
-    id: "local/warehouse-sale-2026-pink",
-    name: "WH Pink",
-    url: "/local-frames/warehouse-sale-2026-pink.png",
-    layout: grid6Layout(),
-  },
-  {
     id: "local/warehouse-sale-2026-4r",
     name: "WH Pink 4R",
     url: "/local-frames/warehouse-sale-2026-4r.png",
